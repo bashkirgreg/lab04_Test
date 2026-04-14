@@ -15,8 +15,6 @@ jobs:
         exclude:
           - os: windows-latest
             compiler: gcc
-          - os: windows-latest
-            compiler: clang
 
     runs-on: ${{ matrix.os }}
 
