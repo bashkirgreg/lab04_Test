@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        compiler: [gcc, clang]
+        exclude:
+          - os: windows-latest
+            compiler: gcc
+          - os: windows-latest
+            compiler: clang
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Environment
+        run: |
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y cmake g++ clang
+          fi
+
+      - name: CMake
+        run: |
+          mkdir build
+          cd build
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            if [ "${{ matrix.compiler }}" == "gcc" ]; then
+              cmake .. -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+            elif [ "${{ matrix.compiler }}" == "clang" ]; then
+              cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            fi
+          else
+            cmake ..
+          fi
+
+      - name: Build
+        run: |
+          cd build
+          cmake --build .
+
+      - name: Hello_world
+        run: |
+          cd build
+          if [ "${{ runner.os }}" == "Windows_NT" ]; then
+            .\hello_world\hello_world.exe
+          else
+            ./hello_world/hello_world
+          fi
+
+      - name: Solver 
+        run: |
+          cd build
+          if [ "${{ runner.os }}" == "Windows_NT" ]; then
+            echo "1 5 4" | .\solver\solver.exe
+          else
+            echo "1 5 4" | ./solver/solver
+          fi
