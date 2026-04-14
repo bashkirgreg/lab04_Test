@@ -11,17 +11,10 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux с GCC
           - os: ubuntu-latest
             compiler: gcc
-            cxx: g++
-            cc: gcc
-          # Linux с Clang
           - os: ubuntu-latest
             compiler: clang
-            cxx: clang++
-            cc: clang
-          # Windows (с MSVC по умолчанию)
           - os: windows-latest
             compiler: msvc
 
@@ -30,49 +23,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Установка зависимостей для Linux
-      - name: Install dependencies (Linux)
+      - name: Setup Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake
+          sudo apt-get install -y cmake ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
 
-      # Настройка Visual Studio для Windows
-      - name: Setup Visual Studio (Windows)
+      - name: Setup Windows
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Настройка CMake для Linux
-      - name: Configure CMake (Linux)
-        if: runner.os == 'Linux'
+      - name: Configure CMake
+        shell: bash
         run: |
-          cmake -B build \
-            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-            -DCMAKE_C_COMPILER=${{ matrix.cc }}
-
-      # Настройка CMake для Windows (без указания компиляторов, MSVC и так по умолчанию)
-      - name: Configure CMake (Windows)
-        if: runner.os == 'Windows'
-        run: cmake -B build
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            if [ "${{ matrix.compiler }}" = "gcc" ]; then
+              cmake -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+            else
+              cmake -B build -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            fi
+          else
+            cmake -B build
+          fi
 
       - name: Build
         run: cmake --build build
 
-      # Тестирование hello_world
       - name: Test hello_world
         shell: bash
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          if [ "${{ runner.os }}" = "Windows" ]; then
             ./build/hello_world/Debug/hello_world.exe
           else
             ./build/hello_world/hello_world
           fi
 
-      # Тестирование solver
       - name: Test solver
         shell: bash
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          if [ "${{ runner.os }}" = "Windows" ]; then
             echo "1 -3 2" | ./build/solver/Debug/solver.exe
           else
             echo "1 -3 2" | ./build/solver/solver
