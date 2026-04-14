@@ -15,31 +15,60 @@ jobs:
         exclude:
           - os: windows-latest
             compiler: gcc
-         
+         # Мы оставляем windows-latest + clang, чтобы проверить работу MSVC
+
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: CMake
-        run: cmake -B build -DCMAKE_COMPILER=${{ matrix.compiler }} 
-        
-      - name: Build
-        run: cmake --build build --config ${{ matrix.compiler }}
-        
+      # Устанавливаем зависимости только для Linux
+      - name: Install Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ clang
+
+      # --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          # Проверяем, если мы на Linux, то передаем компилятор.
+          # На Windows мы просто запускаем cmake без указания компилятора,
+          # чтобы он использовал MSVC по умолчанию.
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            if [ "${{ matrix.compiler }}" == "gcc" ]; then
+              cmake .. -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+            elif [ "${{ matrix.compiler }}" == "clang" ]; then
+              cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            fi
+          else
+            cmake ..
+          fi
+
+      # Собираем в стандартной конфигурации Release
+      - name: Build Project
+        run: |
+          cd build
+          cmake --build . --config Release
+
+      # Запускаем тесты, учитывая пути для Release и разные ОС
       - name: Hello_world
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-             ./build/hello_world/${{ matrix.compiler }}/hello_world.exe
+          cd build
+          if [ "${{ runner.os }}" == "Windows_NT" ]; then
+             .\hello_world\Release\hello_world.exe
           else
-             ./build/hello_world/hello_world
+             ./hello_world/hello_world
           fi
-        
+
       - name: Solver 
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-             echo "1 5 4" | ./build/solver/${{ matrix.compiler }}/solver.exe
+          cd build
+          if [ "${{ runner.os }}" == "Windows_NT" ]; then
+             echo "1 5 4" | .\solver\Release\solver.exe
           else
-             echo "1 5 4" | ./build/solver/solver
+             echo "1 5 4" | ./solver/solver
           fi
