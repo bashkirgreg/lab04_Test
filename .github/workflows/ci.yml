@@ -10,12 +10,13 @@ jobs:
   build:
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            compiler: gcc
-          - os: ubuntu-latest
-            compiler: clang
+        os: [ubuntu-latest, windows-latest]
+        compiler: [gcc, clang]
+        exclude:
           - os: windows-latest
+            compiler: gcc
+          - os: windows-latest
+            compiler: clang
 
     runs-on: ${{ matrix.os }}
 
@@ -23,16 +24,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Details
-        if: runner.os == 'Linux'
+      - name: Environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake g++ clang
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y cmake g++ clang
+          fi
       - name: CMake
         run: |
           mkdir build
           cd build
-          if [ -n "${{ matrix.compiler }}" ]; then
+          if [ "${{ runner.os }}" == "Linux" ]; then
             if [ "${{ matrix.compiler }}" == "gcc" ]; then
               cmake .. -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
             elif [ "${{ matrix.compiler }}" == "clang" ]; then
@@ -44,7 +46,7 @@ jobs:
       - name: Build
         run: |
           cd build
-          cmake --build . --config Release
+          cmake --build .
       - name: Hello_world
         run: |
           cd build
@@ -53,7 +55,7 @@ jobs:
           else
             ./hello_world/hello_world
           fi
-      - name: Solver
+      - name: Solver 
         run: |
           cd build
           if [ "${{ runner.os }}" == "Windows_NT" ]; then
