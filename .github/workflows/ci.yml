@@ -11,35 +11,35 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        compiler: [gcc, clang]
-        exclude:
-          - os: windows-latest
-            compiler: gcc
-         
+        compiler: [gcc, clang]        
+        exclude:          
+        - os: windows-latest            
+          compiler: gcc
+          
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
+
+      - name: Details
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y cmake
 
       - name: CMake
-        run: cmake -B build -DCMAKE_COMPILER=${{ matrix.compiler }} 
-        
+        run: |
+          cmake -B build \
+            -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} \
+            -DCMAKE_C_COMPILER=${{ matrix.compiler }}
+
       - name: Build
-        run: cmake --build build --config ${{ matrix.compiler }}
-        
-      - name: Hello_world
+        run: cmake --build build
+
+      - name: Run hello_world
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-             ./build/hello_world/${{ matrix.compiler }}/hello_world.exe
-          else
-             ./build/hello_world/hello_world
-          fi
-        
-      - name: Solver 
+          cd build
+          ./hello_world/hello_world
+
+      - name: Run solver
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-             echo "1 5 4" | ./build/solver/${{ matrix.compiler }}/solver.exe
-          else
-             echo "1 5 4" | ./build/solver/solver
-          fi
+          cd build
+          ./solver/solver
