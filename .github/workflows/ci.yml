@@ -27,56 +27,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: CMake for Linux
+      - name: Install CMake (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y cmake
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake
 
-      - name: Clang for Windows
+      - name: Install Clang (Windows)
         if: runner.os == 'Windows'
         run: |
           choco install llvm -y
           echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: CMake
+      - name: Configure CMake
         shell: bash
         run: |
           cmake -B build \
+            -G "Unix Makefiles" \
             -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} \
             -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
 
       - name: Build
         run: cmake --build build
 
-      - name: Hello_world
+      - name: Test hello_world
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            if [ -f "./build/hello_world/hello_world.exe" ]; then
-              ./build/hello_world/hello_world.exe
-            elif [ -f "./build/hello_world/Debug/hello_world.exe" ]; then
-              ./build/hello_world/Debug/hello_world.exe
-            else
-              echo "Error: hello_world.exe not found!"
-              find ./build -name "*.exe" 2>/dev/null || true
-              exit 1
-            fi
+            ./build/hello_world/hello_world.exe
           else
             ./build/hello_world/hello_world
           fi
 
-      - name: Solver
+      - name: Test solver
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            if [ -f "./build/solver/solver.exe" ]; then
-              echo "1 5 4" | ./build/solver/solver.exe
-            elif [ -f "./build/solver/Debug/solver.exe" ]; then
-              echo "1 5 4" | ./build/solver/Debug/solver.exe
-            else
-              echo "Error: solver.exe not found!"
-              find ./build -name "*.exe" 2>/dev/null || true
-              exit 1
-            fi
+            echo "1 5 4" | ./build/solver/solver.exe
           else
             echo "1 5 4" | ./build/solver/solver
           fi
