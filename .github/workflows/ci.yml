@@ -27,19 +27,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install CMake (Linux)
+      - name: CMake for Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake
 
-      - name: Install Clang (Windows)
+      - name: Clang for Windows
         if: runner.os == 'Windows'
         run: |
           choco install llvm -y
           echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Configure CMake
+      - name: CMake
         shell: bash
         run: |
           cmake -B build \
@@ -50,7 +50,7 @@ jobs:
       - name: Build
         run: cmake --build build
 
-      - name: Test hello_world
+      - name: Hello_world
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
@@ -59,7 +59,7 @@ jobs:
             ./build/hello_world/hello_world
           fi
 
-      - name: Test solver
+      - name: Solver
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
