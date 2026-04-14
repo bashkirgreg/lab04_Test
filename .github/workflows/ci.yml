@@ -51,7 +51,15 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            ./build/hello_world/hello_world.exe
+            if [ -f "./build/hello_world/hello_world.exe" ]; then
+              ./build/hello_world/hello_world.exe
+            elif [ -f "./build/hello_world/Debug/hello_world.exe" ]; then
+              ./build/hello_world/Debug/hello_world.exe
+            else
+              echo "Error: hello_world.exe not found!"
+              find ./build -name "*.exe" 2>/dev/null || true
+              exit 1
+            fi
           else
             ./build/hello_world/hello_world
           fi
@@ -60,7 +68,15 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            echo "1 5 4" | ./build/solver/solver.exe
+            if [ -f "./build/solver/solver.exe" ]; then
+              echo "1 5 4" | ./build/solver/solver.exe
+            elif [ -f "./build/solver/Debug/solver.exe" ]; then
+              echo "1 5 4" | ./build/solver/Debug/solver.exe
+            else
+              echo "Error: solver.exe not found!"
+              find ./build -name "*.exe" 2>/dev/null || true
+              exit 1
+            fi
           else
             echo "1 5 4" | ./build/solver/solver
           fi
