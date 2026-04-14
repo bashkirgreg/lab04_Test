@@ -16,6 +16,7 @@ jobs:
           - os: ubuntu-latest
             compiler: clang
           - os: windows-latest
+            compiler: clang
 
     runs-on: ${{ matrix.os }}
 
