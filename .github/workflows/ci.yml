@@ -46,7 +46,7 @@ jobs:
       - name: Build
         run: |
           cd build
-          cmake --build .
+          cmake --build . --config Release
 
       - name: Hello_world
         run: |
