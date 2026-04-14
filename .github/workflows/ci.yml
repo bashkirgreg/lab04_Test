@@ -8,8 +8,6 @@ on:
 
 jobs:
   build:
-    # Матрица создает 4 варианта, но мы исключаем один (Windows + gcc),
-    # чтобы остались ровно 3, как в задании.
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -24,39 +22,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Устанавливаем компиляторы только для Linux. На Windows они не нужны.
+      # --- ИЗМЕНЕНИЕ: Добавили shell: bash ---
       - name: Install Dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake g++ clang
+        shell: bash
+      # --- /КОНЕЦ ИЗМЕНЕНИЯ ---
 
-      # Настраиваем проект.
-      # Для Linux явно указываем компилятор. Для Windows - нет (используем MSVC).
+      # --- ИЗМЕНЕНИЕ: Добавили shell: bash ---
       - name: Configure CMake
         run: |
           mkdir build
           cd build
           if [ "${{ runner.os }}" == "Linux" ]; then
-            # Этот блок выполнится только на Linux
             if [ "${{ matrix.compiler }}" == "gcc" ]; then
               cmake .. -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
             elif [ "${{ matrix.compiler }}" == "clang" ]; then
               cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
             fi
           else
-            # А этот блок выполнится только на Windows
             cmake ..
           fi
+        shell: bash
+      # --- /КОНЕЦ ИЗМЕНЕНИЯ ---
 
-      # Собираем проект в конфигурации Release.
-      # Флаг --config Release гарантирует, что файлы будут в папке 'Release'.
+      # --- ИЗМЕНЕНИЕ: Добавили shell: bash (из-за пайпа |) ---
       - name: Build Project
         run: |
           cd build
           cmake --build . --config Release
+        shell: bash
+      # --- /КОНЕЦ ИЗМЕНЕНИЯ ---
 
-      # Запускаем тесты. Пути к файлам ведут в папку 'Release'.
+      # --- ИЗМЕНЕНИЕ: Добавили shell: bash ---
       - name: Run hello_world
         run: |
           cd build
@@ -65,7 +65,9 @@ jobs:
           else
             ./hello_world/hello_world
           fi
+        shell: bash
 
+      # --- ИЗМЕНЕНИЕ: Добавили shell: bash (из-за пайпа |) ---
       - name: Run solver
         run: |
           cd build
@@ -74,3 +76,4 @@ jobs:
           else
             echo "1 -3 2" | ./solver/solver
           fi
+        shell: bash
