@@ -11,69 +11,33 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        compiler: [gcc, clang]
-        exclude:
-          - os: windows-latest
-            compiler: gcc
+        build_type: [Debug, Release]
 
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      # --- ИЗМЕНЕНИЕ: Добавили shell: bash ---
-      - name: Install Dependencies (Linux only)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake g++ clang
-        shell: bash
-      # --- /КОНЕЦ ИЗМЕНЕНИЯ ---
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
-      # --- ИЗМЕНЕНИЕ: Добавили shell: bash ---
-      - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
-          if [ "${{ runner.os }}" == "Linux" ]; then
-            if [ "${{ matrix.compiler }}" == "gcc" ]; then
-              cmake .. -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
-            elif [ "${{ matrix.compiler }}" == "clang" ]; then
-              cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
-            fi
-          else
-            cmake ..
-          fi
-        shell: bash
-      # --- /КОНЕЦ ИЗМЕНЕНИЯ ---
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build_type }}
 
-      # --- ИЗМЕНЕНИЕ: Добавили shell: bash (из-за пайпа |) ---
-      - name: Build Project
-        run: |
-          cd build
-          cmake --build . --config Release
-        shell: bash
-      # --- /КОНЕЦ ИЗМЕНЕНИЯ ---
+    - name: Test hello_world
+      run: |
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          ./build/hello_world/${{ matrix.build_type }}/hello_world.exe
+        else
+          ./build/hello_world/hello_world
+        fi
+      shell: bash
 
-      # --- ИЗМЕНЕНИЕ: Добавили shell: bash ---
-      - name: Run hello_world
-        run: |
-          cd build
-          if [ "${{ runner.os }}" == "Windows_NT" ]; then
-            .\hello_world\Release\hello_world.exe
-          else
-            ./hello_world/hello_world
-          fi
-        shell: bash
-
-      # --- ИЗМЕНЕНИЕ: Добавили shell: bash (из-за пайпа |) ---
-      - name: Run solver
-        run: |
-          cd build
-          if [ "${{ runner.os }}" == "Windows_NT" ]; then
-            echo "1 -3 2" | .\solver\Release\solver.exe
-          else
-            echo "1 -3 2" | ./solver/solver
-          fi
-        shell: bash
+    - name: Test solver
+      run: |
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          echo "1 -3 2" | ./build/solver/${{ matrix.build_type }}/solver.exe
+        else
+          echo "1 -3 2" | ./build/solver/solver
+        fi
+      shell: bash
