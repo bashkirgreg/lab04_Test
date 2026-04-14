@@ -8,6 +8,8 @@ on:
 
 jobs:
   build:
+    # Матрица создает 4 варианта, но мы исключаем один (Windows + gcc),
+    # чтобы остались ровно 3, как в задании.
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -15,60 +17,60 @@ jobs:
         exclude:
           - os: windows-latest
             compiler: gcc
-         # Мы оставляем windows-latest + clang, чтобы проверить работу MSVC
 
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Устанавливаем зависимости только для Linux
-      - name: Install Dependencies
+      # Устанавливаем компиляторы только для Linux. На Windows они не нужны.
+      - name: Install Dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake g++ clang
 
-      # --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
+      # Настраиваем проект.
+      # Для Linux явно указываем компилятор. Для Windows - нет (используем MSVC).
       - name: Configure CMake
         run: |
           mkdir build
           cd build
-          # Проверяем, если мы на Linux, то передаем компилятор.
-          # На Windows мы просто запускаем cmake без указания компилятора,
-          # чтобы он использовал MSVC по умолчанию.
           if [ "${{ runner.os }}" == "Linux" ]; then
+            # Этот блок выполнится только на Linux
             if [ "${{ matrix.compiler }}" == "gcc" ]; then
               cmake .. -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
             elif [ "${{ matrix.compiler }}" == "clang" ]; then
               cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
             fi
           else
+            # А этот блок выполнится только на Windows
             cmake ..
           fi
 
-      # Собираем в стандартной конфигурации Release
+      # Собираем проект в конфигурации Release.
+      # Флаг --config Release гарантирует, что файлы будут в папке 'Release'.
       - name: Build Project
         run: |
           cd build
           cmake --build . --config Release
 
-      # Запускаем тесты, учитывая пути для Release и разные ОС
-      - name: Hello_world
+      # Запускаем тесты. Пути к файлам ведут в папку 'Release'.
+      - name: Run hello_world
         run: |
           cd build
           if [ "${{ runner.os }}" == "Windows_NT" ]; then
-             .\hello_world\Release\hello_world.exe
+            .\hello_world\Release\hello_world.exe
           else
-             ./hello_world/hello_world
+            ./hello_world/hello_world
           fi
 
-      - name: Solver 
+      - name: Run solver
         run: |
           cd build
           if [ "${{ runner.os }}" == "Windows_NT" ]; then
-             echo "1 5 4" | .\solver\Release\solver.exe
+            echo "1 -3 2" | .\solver\Release\solver.exe
           else
-             echo "1 5 4" | ./solver/solver
+            echo "1 -3 2" | ./solver/solver
           fi
