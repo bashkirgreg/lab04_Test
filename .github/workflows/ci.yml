@@ -24,8 +24,6 @@ jobs:
           # Windows (с MSVC по умолчанию)
           - os: windows-latest
             compiler: msvc
-            cxx: cl
-            cc: cl
 
     runs-on: ${{ matrix.os }}
 
@@ -44,12 +42,18 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Настройка CMake с указанием компиляторов
-      - name: Configure CMake
+      # Настройка CMake для Linux
+      - name: Configure CMake (Linux)
+        if: runner.os == 'Linux'
         run: |
           cmake -B build \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }}
+
+      # Настройка CMake для Windows (без указания компиляторов, MSVC и так по умолчанию)
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        run: cmake -B build
 
       - name: Build
         run: cmake --build build
